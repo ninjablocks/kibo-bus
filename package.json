@@ -1,0 +1,31 @@
+{
+  "name": "kibo-bus",
+  "version": "0.1.0",
+  "description": "Bus component for dojo.",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ninjablocks/kibo-bus.git"
+  },
+  "keywords": [
+    "Messaging"
+  ],
+  "author": "Ninja Blocks",
+  "license": "Custom",
+  "bugs": {
+    "url": "https://github.com/ninjablocks/kibo-bus/issues"
+  },
+  "devDependencies": {
+    "should": "~1.2.2",
+    "sinon": "~1.7.3",
+    "mocha": "~1.11.0"
+  },
+  "dependencies": {
+    "debug": "~0.7.2",
+    "amqp": "git://github.com/postwait/node-amqp.git",
+    "rabbit.js": "git://github.com/wolfeidau/rabbit.js.git"
+  }
+}
