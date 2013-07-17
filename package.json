@@ -26,6 +26,8 @@
   "dependencies": {
     "debug": "~0.7.2",
     "amqp": "git://github.com/postwait/node-amqp.git",
-    "rabbit.js": "git://github.com/wolfeidau/rabbit.js.git"
+    "rabbit.js": "git://github.com/wolfeidau/rabbit.js.git",
+    "chai": "~1.7.2",
+    "through": "~2.3.4"
   }
 }
