@@ -34,8 +34,8 @@ describe('Bus', function () {
 
         stream.pipe(through(function onData(data){
           expect(data).to.exist;
-          log('message', 'recieved', data)
-          done()
+          log('message', 'recieved', data);
+          done();
         }));
 
         stream.bindRoutingKey('TEST', function(err){
