@@ -13,6 +13,7 @@ describe('Bus', function () {
 
     log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+
     bus.on('ready', function () {
       bus.publish('sometestpub', function (err, stream) {
         log('stream', 'publish');
@@ -21,14 +22,17 @@ describe('Bus', function () {
         done();
       });
     });
+
   });
 
   it('should open a subscribe stream', function (done) {
+
     log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+
     bus.on('ready', function () {
       log('subscribe');
-      bus.subscribe('sometestpub2', '/queue/sometestpub2', function (err, stream) {
+      bus.subscribe('/bustestsub', '/queue/sometestpub2', function (err, stream) {
 
         log('stream', 'subscribe');
         expect(err).to.not.exist;
@@ -36,7 +40,7 @@ describe('Bus', function () {
 
         stream.pipe(through(function onData(data){
           expect(data).to.exist;
-          log('message', 'recieved', data);
+          log('message', 'relieved', data);
           done();
         }));
 
@@ -44,13 +48,14 @@ describe('Bus', function () {
 
           expect(err).to.not.exist;
 
-          bus.publish('sometestpub2', function (err, stream) {
+          bus.publish('/bustestsub', function (err, stream) {
             log('stream', 'publish');
             stream.write({message: "TEST", routingKey: "TEST"});
           });
         });
       });
     });
+
   });
 
 });

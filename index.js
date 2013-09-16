@@ -8,6 +8,9 @@ var util = require('util');
 var topicStream = require('topic-stream');
 var queueStream = require('queue-stream');
 
+var queueParams = {"durable": true, "autoDelete":false};
+var topicParams = {contentEncoding: 'utf8', contentType: 'application/json', type: 'direct'};
+
 var Bus = function (options) {
   events.EventEmitter.call(this);
 
@@ -23,12 +26,12 @@ var Bus = function (options) {
 
   this.subscribe = function (path, queueName, cb) {
     log('subscribe', path);
-    queueStream({connection: this._connection, exchangeName: path, queueName: queueName}, cb);
+    queueStream({connection: this._connection, exchangeName: path, queueName: queueName, params: queueParams}, cb);
   };
 
   this.publish = function (path, cb) {
     log('publish', path);
-    topicStream({connection: this._connection, exchangeName: path}, cb);
+    topicStream({connection: this._connection, exchangeName: path, params: topicParams}, cb);
   };
 };
 
