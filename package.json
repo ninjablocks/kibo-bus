@@ -26,8 +26,9 @@
   "dependencies": {
     "debug": "~0.7.2",
     "amqp": "git://github.com/postwait/node-amqp.git",
-    "rabbit.js": "git://github.com/wolfeidau/rabbit.js.git",
     "chai": "~1.7.2",
-    "through": "~2.3.4"
+    "through": "~2.3.4",
+    "queue-stream": "~0.1.3",
+    "topic-stream": "~0.1.5"
   }
 }

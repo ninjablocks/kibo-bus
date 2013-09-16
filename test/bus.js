@@ -1,3 +1,5 @@
+"use strict";
+
 var chai = require('chai');
 var log = require('debug')('test:bus');
 var through = require('through');
@@ -9,7 +11,7 @@ describe('Bus', function () {
 
   it('should open a publish stream', function (done) {
 
-    log('open')
+    log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
     bus.on('ready', function () {
       bus.publish('sometestpub', function (err, stream) {
@@ -22,10 +24,10 @@ describe('Bus', function () {
   });
 
   it('should open a subscribe stream', function (done) {
-    log('open')
+    log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
     bus.on('ready', function () {
-      log('subscribe')
+      log('subscribe');
       bus.subscribe('sometestpub2', '/queue/sometestpub2', function (err, stream) {
 
         log('stream', 'subscribe');
@@ -46,7 +48,7 @@ describe('Bus', function () {
             log('stream', 'publish');
             stream.write({message: "TEST", routingKey: "TEST"});
           });
-        })
+        });
       });
     });
   });
