@@ -14,7 +14,7 @@ describe('Bus', function () {
     log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
 
-    bus.publish({exchangeName: 'sometestpub'}, function (err, stream) {
+    bus.publish({exchange: 'sometestpub'}, function (err, stream) {
       log('stream', 'publish');
       expect(stream).to.exist;
       stream.write({message: 'TEST', routingKey: 'TEST'});
@@ -29,7 +29,7 @@ describe('Bus', function () {
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
 
     log('subscribe');
-    bus.subscribe({exchangeName: '/bustestsub', queueName: '/queue/sometestpub2'}, function (err, stream) {
+    bus.subscribe({exchange: '/bustestsub', queue: '/queue/sometestpub2'}, function (err, stream) {
 
       log('stream', 'subscribe');
       expect(err).to.not.exist;
@@ -45,7 +45,7 @@ describe('Bus', function () {
 
         expect(err).to.not.exist;
 
-        bus.publish({exchangeName: '/bustestsub'}, function (err, stream) {
+        bus.publish({exchange: '/bustestsub'}, function (err, stream) {
           log('stream', 'publish');
           stream.write({message: "TEST subscribe", _routingKey: "TEST"});
         });
@@ -59,12 +59,12 @@ describe('Bus', function () {
     log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
 
-    bus.get({routingKey: 'TEST', exchangeName: '/bustestget', queueName: '/queue/sometestget'}, function (err, data) {
+    bus.get({routingKey: 'TEST', exchange: '/bustestget', queue: '/queue/sometestget'}, function (err, data) {
       log('get', data);
       expect(err).to.not.exist;
       expect(data).to.exist;
 
-      bus.get({routingKey: 'TEST', exchangeName: '/bustestget', queueName: '/queue/sometestget'}, function (err, data) {
+      bus.get({routingKey: 'TEST', exchange: '/bustestget', queue: '/queue/sometestget'}, function (err, data) {
         log('get', data);
         expect(err).to.not.exist;
         expect(data).to.exist;
@@ -74,7 +74,7 @@ describe('Bus', function () {
       });
     });
 
-    bus.publish({exchangeName: '/bustestget'}, function (err, stream) {
+    bus.publish({exchange: '/bustestget'}, function (err, stream) {
       log('stream', 'publish');
 
       stream.write({message: "TEST", _routingKey: "TEST"});
@@ -89,7 +89,7 @@ describe('Bus', function () {
     log('open');
     var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
 
-    bus.get({routingKey: 'TEST', exchangeName: '/bustestget', queueName: '/queue/sometestget'}, function (err, data) {
+    bus.get({routingKey: 'TEST', exchange: '/bustestget', queue: '/queue/sometestget'}, function (err, data) {
       log('get', data);
       expect(err).to.exist;
       expect(data).to.not.exist;

@@ -20,6 +20,15 @@ var Bus = function (options) {
 
   var self = this;
 
+  this._asyncParseMessageContent = function (msg, cb) {
+    try {
+      var obj = JSON.parse(msg.content);
+      cb(null, obj);
+    } catch (e) {
+      return cb(e);
+    }
+  };
+
   this._readMessage = function (ch, timeoutProtect, cb, msg) {
 
     // Proceed only if the timeout handler has not yet fired.
@@ -28,22 +37,22 @@ var Bus = function (options) {
       // Clear the scheduled timeout handler
       clearTimeout(timeoutProtect);
 
-      var obj = JSON.parse(msg.content);
-      log('obj', obj);
+      // ack and close the channel
       ch.ack(msg);
       ch.close();
-      cb(null, obj);
+      self._asyncParseMessageContent(msg, cb);
     }
+
   };
 
   this.subscribe = function (options, cb) {
     log('subscribe', options);
-    queueStream(this._connection, {exchangeName: options.exchangeName, queueName: options.queueName, params: queueParams}, cb);
+    queueStream(this._connection, {exchangeName: options.exchange, queueName: options.queue, params: queueParams}, cb);
   };
 
   this.publish = function (options, cb) {
     log('publish', options);
-    topicStream(this._connection, {exchangeName: options.exchangeName}, cb);
+    topicStream(this._connection, {exchangeName: options.exchange}, cb);
   };
 
   this.get = function (options, cb) {
@@ -53,7 +62,8 @@ var Bus = function (options) {
 
     var timeoutProtect = setTimeout(function () {
 
-      // Clear the local timer variable, indicating the timeout has been triggered.
+      // Clear the local timer variable,
+      // indicating the timeout has been triggered.
       timeoutProtect = null;
 
       // Execute the callback with an error argument.
@@ -65,9 +75,9 @@ var Bus = function (options) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-          ch.assertQueue(options.queueName, queueParams),
-          ch.assertExchange(options.exchangeName, 'topic'),
-          ch.consume(options.queueName, self._readMessage.bind(null, ch, timeoutProtect, cb))
+          ch.assertQueue(options.queue, queueParams),
+          ch.assertExchange(options.exchange, 'topic'),
+          ch.consume(options.queue, self._readMessage.bind(null, ch, timeoutProtect, cb))
         ]);
       });
       return ok;
