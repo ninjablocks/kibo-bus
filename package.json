@@ -28,7 +28,9 @@
     "amqp": "git://github.com/postwait/node-amqp.git",
     "chai": "~1.7.2",
     "through": "~2.3.4",
-    "queue-stream": "~0.1.3",
-    "topic-stream": "~0.1.5"
+    "amqplib": "0.0.2",
+    "topic-stream": "~0.2.1",
+    "queue-stream": "~0.3.1",
+    "when": "~2.4.0"
   }
 }

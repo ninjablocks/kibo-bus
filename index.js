@@ -1,37 +1,78 @@
 "use strict";
 
 var log = require('debug')('ninja:bus');
-var amqp = require('amqp');
+var when = require('when');
+var amqplib = require('amqplib');
 var events = require('events');
 var util = require('util');
 
 var topicStream = require('topic-stream');
 var queueStream = require('queue-stream');
 
-var queueParams = {"durable": true, "autoDelete":false};
-var topicParams = {contentEncoding: 'utf8', contentType: 'application/json', type: 'direct'};
+var queueParams = {durable: true, autoDelete: false, messageTtl: 30000};
 
 var Bus = function (options) {
   events.EventEmitter.call(this);
 
-  log('connect', options.rabbit_url);
+  log('connect');
   this._connection =
-    amqp.createConnection({url: "amqp://guest:guest@localhost:5672"});
+    amqplib.connect(options.rabbit_url);
 
   var self = this;
-  this._connection.once('ready', function () {
-    log('Bus', 'ready');
-    self.emit('ready');
-  });
 
-  this.subscribe = function (path, queueName, cb) {
-    log('subscribe', path);
-    queueStream({connection: this._connection, exchangeName: path, queueName: queueName, params: queueParams}, cb);
+  this._readMessage = function (ch, timeoutProtect, cb, msg) {
+
+    // Proceed only if the timeout handler has not yet fired.
+    if (timeoutProtect) {
+
+      // Clear the scheduled timeout handler
+      clearTimeout(timeoutProtect);
+
+      var obj = JSON.parse(msg.content);
+      log('obj', obj);
+      ch.ack(msg);
+      ch.close();
+      cb(null, obj);
+    }
   };
 
-  this.publish = function (path, cb) {
-    log('publish', path);
-    topicStream({connection: this._connection, exchangeName: path, params: topicParams}, cb);
+  this.subscribe = function (options, cb) {
+    log('subscribe', options);
+    queueStream(this._connection, {exchangeName: options.exchangeName, queueName: options.queueName, params: queueParams}, cb);
+  };
+
+  this.publish = function (options, cb) {
+    log('publish', options);
+    topicStream(this._connection, {exchangeName: options.exchangeName}, cb);
+  };
+
+  this.get = function (options, cb) {
+    log('get', options);
+
+    var timeout = 1000 || options.timeout;
+
+    var timeoutProtect = setTimeout(function () {
+
+      // Clear the local timer variable, indicating the timeout has been triggered.
+      timeoutProtect = null;
+
+      // Execute the callback with an error argument.
+      cb({error: 'async timed out'});
+
+    }, timeout);
+
+    this._connection.then(function (conn) {
+      var ok = conn.createChannel();
+      ok = ok.then(function (ch) {
+        when.all([
+          ch.assertQueue(options.queueName, queueParams),
+          ch.assertExchange(options.exchangeName, 'topic'),
+          ch.consume(options.queueName, self._readMessage.bind(null, ch, timeoutProtect, cb))
+        ]);
+      });
+      return ok;
+    });
+
   };
 };
 
