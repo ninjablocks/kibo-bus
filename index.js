@@ -84,6 +84,13 @@ var Bus = function (options) {
     });
 
   };
+
+  this.close = function(){
+    this._connection.then(function (conn) {
+      log('close');
+      conn.close();
+    }, console.warn);
+  }
 };
 
 util.inherits(Bus, events.EventEmitter);
