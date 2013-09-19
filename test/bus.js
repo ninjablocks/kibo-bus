@@ -74,13 +74,8 @@ describe('Bus', function () {
       });
     });
 
-    bus.publish({exchange: '/bustestget'}, function (err, stream) {
-      log('stream', 'publish');
-
-      stream.write({message: "TEST", _routingKey: "TEST"});
-      stream.write({message: "TEST", _routingKey: "TEST"});
-
-    });
+    bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST"});
+    bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST"});
 
   });
 

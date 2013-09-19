@@ -31,6 +31,8 @@ var Bus = function (options) {
 
   this._readMessage = function (ch, timeoutProtect, cb, msg) {
 
+    // TODO need to look into tying this function into the promises
+
     // Proceed only if the timeout handler has not yet fired.
     if (timeoutProtect) {
 
@@ -85,12 +87,33 @@ var Bus = function (options) {
 
   };
 
-  this.close = function(){
+  this.put = function (options, content, cb) {
+
+    this._connection.then(function (conn) {
+      var ok = conn.createChannel();
+      ok = ok.then(function (ch) {
+        when.all([
+          ch.assertQueue(options.queue, queueParams),
+          ch.assertExchange(options.exchange, 'topic'),
+          ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
+        ]).ensure(function () {
+            log('channel', 'close');
+            ch.close();
+          });
+        if (cb) cb();
+      });
+      return ok;
+    });
+
+  };
+
+  this.close = function () {
     this._connection.then(function (conn) {
       log('close');
       conn.close();
     }, console.warn);
-  }
+  };
+
 };
 
 util.inherits(Bus, events.EventEmitter);
