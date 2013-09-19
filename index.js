@@ -48,16 +48,34 @@ var Bus = function (options) {
 
   };
 
+  /**
+   * Subscribe to a queue and return a stream to read from.
+   *
+   * @param options
+   * @param cb
+   */
   this.subscribe = function (options, cb) {
     log('subscribe', options);
     queueStream(this._connection, {exchangeName: options.exchange, queueName: options.queue, params: queueParams}, cb);
   };
 
+  /**
+   * Publish to a queue and return a stream to write to.
+   *
+   * @param options
+   * @param cb
+   */
   this.publish = function (options, cb) {
     log('publish', options);
     topicStream(this._connection, {exchangeName: options.exchange}, cb);
   };
 
+  /**
+   * Get a message from a queue or timeout.
+   *
+   * @param options
+   * @param cb
+   */
   this.get = function (options, cb) {
     log('get', options);
 
@@ -91,6 +109,13 @@ var Bus = function (options) {
 
   };
 
+  /**
+   * Put a single message into an exchange.
+   *
+   * @param options
+   * @param content
+   * @param cb
+   */
   this.put = function (options, content, cb) {
     log('put', options);
 
@@ -111,6 +136,9 @@ var Bus = function (options) {
 
   };
 
+  /**
+   * Close the resources used by the bus.
+   */
   this.close = function () {
     this._connection.then(function (conn) {
       log('close');
