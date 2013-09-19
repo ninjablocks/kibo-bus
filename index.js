@@ -21,6 +21,7 @@ var Bus = function (options) {
   var self = this;
 
   this._asyncParseMessageContent = function (msg, cb) {
+    log('msg', msg);
     try {
       var obj = JSON.parse(msg.content);
       cb(null, obj);
@@ -60,7 +61,9 @@ var Bus = function (options) {
   this.get = function (options, cb) {
     log('get', options);
 
-    var timeout = 1000 || options.timeout;
+    var timeout = options.timeout || 1000;
+
+    log('timeout', timeout);
 
     var timeoutProtect = setTimeout(function () {
 
@@ -79,6 +82,7 @@ var Bus = function (options) {
         when.all([
           ch.assertQueue(options.queue, queueParams),
           ch.assertExchange(options.exchange, 'topic'),
+          ch.bindQueue(options.queue, options.exchange, options.routingKey),
           ch.consume(options.queue, self._readMessage.bind(null, ch, timeoutProtect, cb))
         ]);
       });
@@ -88,12 +92,12 @@ var Bus = function (options) {
   };
 
   this.put = function (options, content, cb) {
+    log('put', options);
 
     this._connection.then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-          ch.assertQueue(options.queue, queueParams),
           ch.assertExchange(options.exchange, 'topic'),
           ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
         ]).ensure(function () {
