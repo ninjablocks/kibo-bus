@@ -12,7 +12,7 @@ describe('Bus', function () {
   it('should open a publish stream', function (done) {
 
     log('open');
-    var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+    var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
     bus.publish({exchange: 'sometestpub'}, function (err, stream) {
       log('stream', 'publish');
@@ -26,7 +26,7 @@ describe('Bus', function () {
   it('should open a subscribe stream', function (done) {
 
     log('open');
-    var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+    var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
     log('subscribe');
     bus.subscribe({exchange: '/bustestsub', queue: '/queue/sometestpub2'}, function (err, stream) {
@@ -57,7 +57,7 @@ describe('Bus', function () {
   it('should open a queue and get two messages', function (done) {
 
     log('open');
-    var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+    var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
     bus.get({routingKey: 'TEST', exchange: '/bustestget', queue: '/queue/sometestget', timeout: 2000}, function (err, data) {
       log('get', data);
@@ -82,7 +82,7 @@ describe('Bus', function () {
   it('should open a queue and get should timeout', function (done) {
 
     log('open');
-    var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+    var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
     bus.get({routingKey: 'TEST', exchange: '/bustestget', queue: '/queue/sometestget'}, function (err, data) {
       log('get', data);

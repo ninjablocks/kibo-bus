@@ -16,7 +16,7 @@ var Bus = function (options) {
 
   log('connect');
   this._connection =
-    amqplib.connect(options.rabbit_url);
+    amqplib.connect(options.rabbitmq_url);
 
   var self = this;
 

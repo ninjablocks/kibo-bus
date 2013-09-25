@@ -18,7 +18,7 @@ Connect to an AMQP server and publish to a topic via a stream.
 
 var bus = require('kibo-bus');
 
-var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
 // exchange is a "route" for want of a better term, it controls what routing for queues
 bus.publish({exchange: 'sometestpub'}, function (err, stream) {
@@ -37,7 +37,7 @@ Connect to an AMQP server and subscribe to a queue via a stream.
 
 var bus = require('kibo-bus');
 
-var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
 // exchange is a "route" for want of a better term, it controls what routing for queues
 bus.publish({exchange: 'sometestpub'}, function (err, stream) {
@@ -64,7 +64,7 @@ Connect to an AMQP server and put a message into an exchange.
 
 var bus = require('kibo-bus');
 
-var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
 // exchange is a "route" for want of a better term, it controls what routing for queues
 bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST get"});
@@ -76,7 +76,7 @@ Connect to an AMQP server and get a message from a queue.
 
 var bus = require('kibo-bus');
 
-var bus = new Bus({rabbit_url: 'amqp://guest:guest@localhost:5672'});
+var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
 
 // exchange is a "route" for want of a better term, it controls what routing for queues
 // the get will timeout after the value specified and return an async error.
