@@ -9,7 +9,7 @@ var util = require('util');
 var topicStream = require('topic-stream');
 var queueStream = require('queue-stream');
 
-var queueParams = {durable: true, autoDelete: false, messageTtl: 30000};
+var queueParams = {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000};
 
 var Bus = function (options) {
   events.EventEmitter.call(this);
