@@ -5,11 +5,12 @@ var when = require('when');
 var amqplib = require('amqplib');
 var events = require('events');
 var util = require('util');
+var xtend = require('xtend');
 
 var topicStream = require('topic-stream');
 var queueStream = require('queue-stream');
 
-var queueParams = {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000};
+var queueDefaults = {params: {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000}};
 
 var Bus = function (options) {
   events.EventEmitter.call(this);
@@ -56,7 +57,7 @@ var Bus = function (options) {
    */
   this.subscribe = function (options, cb) {
     log('subscribe', options);
-    queueStream(this._connection, {exchangeName: options.exchange, queueName: options.queue, params: queueParams}, cb);
+    queueStream(this._connection, xtend(queueDefaults, options), cb);
   };
 
   /**
@@ -98,7 +99,7 @@ var Bus = function (options) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-          ch.assertQueue(options.queue, queueParams),
+          ch.assertQueue(options.queue, queueDefaults.params),
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
           ch.consume(options.queue, self._readMessage.bind(null, ch, timeoutProtect, cb))
