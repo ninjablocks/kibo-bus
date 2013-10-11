@@ -99,7 +99,7 @@ var Bus = function (options) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-          ch.assertQueue(options.queue, queueDefaults.params),
+          ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
           ch.consume(options.queue, self._readMessage.bind(null, ch, timeoutProtect, cb))
