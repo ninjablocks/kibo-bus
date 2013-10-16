@@ -1,6 +1,6 @@
 {
   "name": "kibo-bus",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Bus component for dojo.",
   "main": "index.js",
   "scripts": {
