@@ -5,6 +5,7 @@ var when = require('when');
 var amqplib = require('amqplib');
 var events = require('events');
 var util = require('util');
+var crypto = require('crypto');
 var xtend = require('xtend');
 
 var topicStream = require('topic-stream');
@@ -31,7 +32,7 @@ var Bus = function (options) {
     }
   };
 
-  this._readMessage = function (ch, timeoutProtect, cb, msg) {
+  this._readMessage = function (ch, consumerTag, timeoutProtect, cb, msg) {
 
     // TODO need to look into tying this function into the promises
 
@@ -43,10 +44,16 @@ var Bus = function (options) {
 
       // ack and close the channel
       ch.ack(msg);
+      log('channel', 'cancel', consumerTag);
+      ch.cancel(consumerTag); // close that consumer
       ch.close();
       self._asyncParseMessageContent(msg, cb);
     }
 
+  };
+
+  this._consumerTagGenerator = function () {
+    return crypto.randomBytes(5).readUInt32BE(0).toString(16);
   };
 
   /**
@@ -98,11 +105,12 @@ var Bus = function (options) {
     this._connection.then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
+        var consumerTag = self._consumerTagGenerator();
         when.all([
           ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
-          ch.consume(options.queue, self._readMessage.bind(null, ch, timeoutProtect, cb))
+          ch.consume(options.queue, self._readMessage.bind(null, ch, consumerTag, timeoutProtect, cb), {consumerTag: consumerTag})
         ]);
       });
       return ok;
