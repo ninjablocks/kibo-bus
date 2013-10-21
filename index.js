@@ -91,21 +91,27 @@ var Bus = function (options) {
 
     log('timeout', timeout);
 
-    var timeoutProtect = setTimeout(function () {
-
-      // Clear the local timer variable,
-      // indicating the timeout has been triggered.
-      timeoutProtect = null;
-
-      // Execute the callback with an error argument.
-      cb({error: 'async timed out'});
-
-    }, timeout);
-
     this._connection.then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         var consumerTag = self._consumerTagGenerator();
+
+        var timeoutProtect = setTimeout(function () {
+
+          // Clear the local timer variable,
+          // indicating the timeout has been triggered.
+          timeoutProtect = null;
+
+          // Execute the callback with an error argument.
+          cb({error: 'async timed out'});
+
+          log('channel', 'cancel', consumerTag);
+          ch.cancel(consumerTag); // close that consumer
+          ch.close();
+
+
+        }, timeout);
+
         when.all([
           ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
           ch.assertExchange(options.exchange, 'topic'),
