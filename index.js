@@ -23,6 +23,7 @@ var Bus = function (options) {
   var self = this;
 
   this._asyncParseMessageContent = function (msg, cb) {
+    log('msg', msg);
     try {
       var obj = JSON.parse(msg.content);
       cb(null, obj);
@@ -31,26 +32,29 @@ var Bus = function (options) {
     }
   };
 
-  this._doGet = function (ch, timeoutProtect, options, cb) {
-    log('doGet', 'poll');
+  this._readMessage = function (ch, consumerTag, timeoutProtect, cb, msg) {
+
+    // TODO need to look into tying this function into the promises
+
+    // Proceed only if the timeout handler has not yet fired.
     if (timeoutProtect) {
-      ch.get(options.queue, {noAck: false}).then(function (msg) {
-        if (msg) {
-          log('_doGet', 'msg', msg);
-          // Clear the scheduled timeout handler
-          clearTimeout(timeoutProtect);
-          self._asyncParseMessageContent(msg, cb);
-          ch.ack(msg);
-          ch.close().then(function(){
-            log('channel', 'close');
-          }, console.warn);
-        } else {
-          setTimeout(self._doGet, 100);
-        }
-      });
+
+      // Clear the scheduled timeout handler
+      clearTimeout(timeoutProtect);
+
+      // ack and close the channel
+      ch.ack(msg);
+      log('channel', 'cancel', consumerTag);
+      ch.cancel(consumerTag); // close that consumer
+      ch.close();
+      self._asyncParseMessageContent(msg, cb);
     }
+
   };
 
+  this._consumerTagGenerator = function () {
+    return crypto.randomBytes(5).readUInt32BE(0).toString(16);
+  };
 
   /**
    * Subscribe to a queue and return a stream to read from.
@@ -101,18 +105,13 @@ var Bus = function (options) {
     this._connection.then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
-
+        var consumerTag = self._consumerTagGenerator();
         when.all([
-            ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
-            ch.assertExchange(options.exchange, 'topic'),
-            ch.prefetch(1),
-            ch.bindQueue(options.queue, options.exchange, options.routingKey),
-
-          ]).then(function () {
-
-            setTimeout(self._doGet.bind(null, ch, timeoutProtect, options, cb), 100);
-
-          });
+          ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
+          ch.assertExchange(options.exchange, 'topic'),
+          ch.bindQueue(options.queue, options.exchange, options.routingKey),
+          ch.consume(options.queue, self._readMessage.bind(null, ch, consumerTag, timeoutProtect, cb), {consumerTag: consumerTag})
+        ]);
       });
       return ok;
     });
@@ -133,9 +132,9 @@ var Bus = function (options) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-            ch.assertExchange(options.exchange, 'topic'),
-            ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
-          ]).ensure(function () {
+          ch.assertExchange(options.exchange, 'topic'),
+          ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
+        ]).ensure(function () {
             log('channel', 'close');
             ch.close();
           });
