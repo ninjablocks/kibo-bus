@@ -23,7 +23,6 @@ var Bus = function (options) {
   var self = this;
 
   this._asyncParseMessageContent = function (msg, cb) {
-    log('msg', msg);
     try {
       var obj = JSON.parse(msg.content);
       cb(null, obj);
@@ -35,12 +34,13 @@ var Bus = function (options) {
   this._doGet = function (ch, timeoutProtect, options, cb) {
     log('doGet', 'poll');
     if (timeoutProtect) {
-      ch.get(options.queue, {noAck: true}).then(function (msg) {
+      ch.get(options.queue, {noAck: false}).then(function (msg) {
         if (msg) {
-          log('msg', msg);
+          log('_doGet', 'msg', msg);
           // Clear the scheduled timeout handler
           clearTimeout(timeoutProtect);
           self._asyncParseMessageContent(msg, cb);
+          ch.ack(msg);
           ch.close().then(function(){
             log('channel', 'close');
           }, console.warn);
@@ -105,6 +105,7 @@ var Bus = function (options) {
         when.all([
             ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
             ch.assertExchange(options.exchange, 'topic'),
+            ch.prefetch(1),
             ch.bindQueue(options.queue, options.exchange, options.routingKey),
 
           ]).then(function () {
