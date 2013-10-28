@@ -23,7 +23,47 @@ describe('Bus', function () {
 
   });
 
-  it('should open a subscribe stream', function (done) {
+  it('should open a subscribe stream and send 100 messages', function (done) {
+
+    log('open');
+    var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
+
+    log('subscribe');
+    bus.subscribe({exchange: '/bustestsub', queue: '/queue/sometestpub2'}, function (err, stream) {
+
+      log('stream', 'subscribe');
+      expect(err).to.not.exist;
+      expect(stream).to.exist;
+
+      var msgs = 0;
+
+      stream.pipe(through(function onData(data) {
+        expect(data).to.exist;
+        log('message', 'relieved', data);
+        msgs++;
+        if (msgs == 100) {
+          stream.cancelConsumer().then(function(){
+            bus.close();
+            done();
+          });
+        }
+      }));
+
+      stream.bindRoutingKey('TEST', function (err) {
+
+        expect(err).to.not.exist;
+
+        bus.publish({exchange: '/bustestsub'}, function (err, stream) {
+          log('stream', 'publish');
+          for (var i = 0; i < 100; i++)
+            stream.write({message: "TEST subscribe", _routingKey: "TEST"});
+        });
+      });
+    });
+
+  });
+
+  it('should open a subscribe stream a second time', function (done) {
 
     log('open');
     var bus = new Bus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
@@ -38,7 +78,10 @@ describe('Bus', function () {
       stream.pipe(through(function onData(data) {
         expect(data).to.exist;
         log('message', 'relieved', data);
-        done();
+        stream.cancelConsumer().then(function(){
+          bus.close();
+          done();
+        });
       }));
 
       stream.bindRoutingKey('TEST', function (err) {
