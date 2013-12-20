@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "debug": "~0.7.2",
-    "amqp": "git://github.com/postwait/node-amqp.git",
     "chai": "~1.7.2",
     "through": "~2.3.4",
     "xtend": "~2.1.1",

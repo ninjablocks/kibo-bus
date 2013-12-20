@@ -4,10 +4,22 @@ var chai = require('chai');
 var log = require('debug')('test:bus');
 var through = require('through');
 var Bus = require('../index.js');
+var amqplib = require('amqplib');
 
 var expect = chai.expect;
 
 describe('Bus', function () {
+
+  before(function(done){
+    amqplib.connect('amqp://guest:guest@localhost:5672').then(function(conn){
+      conn.createChannel().then(function(ch){
+        ch.assertQueue('/queue/sometestpub2', {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000});
+        ch.assertQueue('/queue/sometestget', {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000});
+        log('queues', 'created');
+        done();
+      });
+    });
+  });
 
   it('should open a publish stream', function (done) {
 
@@ -111,14 +123,14 @@ describe('Bus', function () {
         log('get', data);
         expect(err).to.not.exist;
         expect(data).to.exist;
-
         done();
-
       });
     });
 
-    bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST get"});
-    bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST get"});
+    setTimeout(function(){
+      bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST get"});
+      bus.put({exchange: '/bustestget', routingKey: "TEST"}, {message: "TEST get"});
+    }, 100);
 
   });
 
