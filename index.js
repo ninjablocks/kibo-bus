@@ -16,41 +16,13 @@ var queueDefaults = {params: {durable: true, autoDelete: false, messageTtl: 3000
 var Bus = function (options) {
   events.EventEmitter.call(this);
 
+  this.rabbitmq_url = options.rabbitmq_url;
+
   log('connect');
   this._connection =
     amqplib.connect(options.rabbitmq_url);
 
   var self = this;
-
-  this._asyncParseMessageContent = function (msg, cb) {
-    log('msg', msg);
-    try {
-      var obj = JSON.parse(msg.content);
-      cb(null, obj);
-    } catch (e) {
-      return cb(e);
-    }
-  };
-
-  this._readMessage = function (ch, consumerTag, timeoutProtect, cb, msg) {
-
-    // TODO need to look into tying this function into the promises
-
-    // Proceed only if the timeout handler has not yet fired.
-    if (timeoutProtect) {
-
-      // Clear the scheduled timeout handler
-      clearTimeout(timeoutProtect);
-
-      // ack and close the channel
-      ch.ack(msg);
-      log('channel', 'cancel', consumerTag);
-      ch.cancel(consumerTag); // close that consumer
-      ch.close();
-      self._asyncParseMessageContent(msg, cb);
-    }
-
-  };
 
   this._consumerTagGenerator = function () {
     return crypto.randomBytes(5).readUInt32BE(0).toString(16);
@@ -91,24 +63,24 @@ var Bus = function (options) {
 
     log('timeout', timeout);
 
-    this._connection.then(function (conn) {
+    amqplib.connect(this.rabbitmq_url).then(function (conn) {
       var ok = conn.createChannel();
-      ok = ok.then(function (ch) {
+      ok.then(function (ch) {
         var consumerTag = self._consumerTagGenerator();
 
         var timeoutProtect = setTimeout(function () {
 
-          // Clear the local timer variable,
-          // indicating the timeout has been triggered.
+          // check variable
           timeoutProtect = null;
 
-          // Execute the callback with an error argument.
+          log('cancel', consumerTag);
+          ch.cancel(consumerTag);
+          ch.close().ensure(function () {
+            log('conn', 'close');
+            conn.close();
+          });
+
           cb({error: 'async timed out'});
-
-          log('channel', 'cancel', consumerTag);
-          ch.cancel(consumerTag); // close that consumer
-          ch.close();
-
 
         }, timeout);
 
@@ -116,9 +88,36 @@ var Bus = function (options) {
           ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
-          ch.consume(options.queue, self._readMessage.bind(null, ch, consumerTag, timeoutProtect, cb), {consumerTag: consumerTag})
+          ch.consume(options.queue, readMessage, {consumerTag: consumerTag})
         ]);
+
+        function readMessage(msg) {
+
+          // Proceed only if the timeout handler has not yet fired.
+          if (timeoutProtect) {
+
+            // Clear the scheduled timeout handler
+            clearTimeout(timeoutProtect);
+
+            // ack and close the channel
+            ch.ack(msg);
+            log('cancel', consumerTag);
+            ch.cancel(consumerTag);
+            ch.close().ensure(function () {
+              log('conn', 'close');
+              conn.close();
+            });
+
+            try {
+              return cb(null, JSON.parse(msg.content));
+            } catch (e) {
+              return cb(e);
+            }
+          }
+
+        }
       });
+
       return ok;
     });
 
@@ -134,15 +133,20 @@ var Bus = function (options) {
   this.put = function (options, content, cb) {
     log('put', options);
 
-    this._connection.then(function (conn) {
+    amqplib.connect(this.rabbitmq_url).then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
         when.all([
-          ch.assertExchange(options.exchange, 'topic'),
-          ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
-        ]).ensure(function () {
+            ch.assertExchange(options.exchange, 'topic'),
+            ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
+          ]).ensure(function () {
+
             log('channel', 'close');
-            ch.close();
+            ch.close().ensure(function () {
+              log('conn', 'close');
+              conn.close();
+            });
+
           });
         if (cb) cb();
       });
