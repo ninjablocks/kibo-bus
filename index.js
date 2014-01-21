@@ -148,7 +148,9 @@ var Bus = function (options) {
             });
 
           });
-        if (cb) cb();
+        if (cb) {
+          cb();
+        }
       });
       return ok;
     });

@@ -67,8 +67,9 @@ describe('Bus', function () {
 
         bus.publish({exchange: '/bustestsub'}, function (err, stream) {
           log('stream', 'publish');
-          for (var i = 0; i < 100; i++)
+          for (var i = 0; i < 100; i++) {
             stream.write({message: "TEST subscribe", _routingKey: "TEST"});
+          }
         });
       });
     });
