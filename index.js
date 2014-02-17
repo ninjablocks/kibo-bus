@@ -13,10 +13,17 @@ var queueStream = require('queue-stream');
 
 var queueDefaults = {params: {durable: true, autoDelete: false, messageTtl: 30000, expires: 3600000}};
 
+/**
+ * Creates an instance of the bus.
+ *
+ * @param options
+ * @constructor
+ */
 var Bus = function (options) {
   events.EventEmitter.call(this);
 
   this.rabbitmq_url = options.rabbitmq_url;
+  this.logger = options.logger || console.trace;
 
   log('connect');
   this._connection =
@@ -89,7 +96,7 @@ var Bus = function (options) {
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
           ch.consume(options.queue, readMessage, {consumerTag: consumerTag})
-        ]);
+        ]).then(null, self.logger);
 
         function readMessage(msg) {
 
@@ -139,15 +146,15 @@ var Bus = function (options) {
         when.all([
             ch.assertExchange(options.exchange, 'topic'),
             ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
-          ]).ensure(function () {
+          ]).then(undefined, self.logger).ensure(function () {
 
-            log('channel', 'close');
-            ch.close().ensure(function () {
-              log('conn', 'close');
-              conn.close();
-            });
-
+          log('channel', 'close');
+          ch.close().ensure(function () {
+            log('conn', 'close');
+            conn.close();
           });
+
+        });
         if (cb) {
           cb();
         }
@@ -171,4 +178,19 @@ var Bus = function (options) {
 
 util.inherits(Bus, events.EventEmitter);
 
-module.exports = Bus;
+exports = module.exports = Bus;
+
+var bus;
+
+/**
+ * Creates a bus which is cached in the module.
+ *
+ * @param options
+ */
+exports.createBus = function (options) {
+  if (bus === undefined) {
+    bus = new Bus(options);
+  }
+  return bus;
+};
+

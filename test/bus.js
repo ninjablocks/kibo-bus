@@ -148,4 +148,13 @@ describe('Bus', function () {
     });
 
   });
+
+  it('should create a bus and cache it', function(){
+
+    var bus = Bus.createBus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
+    var bus2 = Bus.createBus({rabbitmq_url: 'amqp://guest:guest@localhost:5672'});
+
+    expect(bus).to.eq(bus2);
+
+  });
 });
