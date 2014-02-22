@@ -92,6 +92,7 @@ var Bus = function (options) {
         }, timeout);
 
         when.all([
+          ch.prefetch(1), // ensure only one message is fetched.
           ch.assertQueue(options.queue, xtend(queueDefaults.params, options.params)),
           ch.assertExchange(options.exchange, 'topic'),
           ch.bindQueue(options.queue, options.exchange, options.routingKey),
