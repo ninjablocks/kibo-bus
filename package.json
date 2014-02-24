@@ -31,6 +31,7 @@
     "amqplib": "0.0.2",
     "topic-stream": "~0.2.1",
     "queue-stream": "~0.6.0",
-    "when": "~2.4.0"
+    "when": "~2.4.0",
+    "hoek": "~1.5.0"
   }
 }

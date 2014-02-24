@@ -7,6 +7,7 @@ var events = require('events');
 var util = require('util');
 var crypto = require('crypto');
 var xtend = require('xtend');
+var hoek = require('hoek');
 
 var topicStream = require('topic-stream');
 var queueStream = require('queue-stream');
@@ -24,6 +25,7 @@ var Bus = function (options) {
 
   this.rabbitmq_url = options.rabbitmq_url;
   this.logger = options.logger || console.trace;
+  this.metrics = options.metrics == undefined ? true : options.metrics;
 
   log('connect');
   this._connection =
@@ -67,12 +69,15 @@ var Bus = function (options) {
     log('get', options);
 
     var timeout = options.timeout || 1000;
+    var bench = new hoek.Bench();
 
     log('timeout', timeout);
 
     amqplib.connect(this.rabbitmq_url).then(function (conn) {
       var ok = conn.createChannel();
       ok.then(function (ch) {
+
+        if (self.metrics) console.log('sample#bus.get.conn.open=' + bench.elapsed());
         var consumerTag = self._consumerTagGenerator();
 
         var timeoutProtect = setTimeout(function () {
@@ -140,10 +145,14 @@ var Bus = function (options) {
    */
   this.put = function (options, content, cb) {
     log('put', options);
+    var bench = new hoek.Bench();
 
     amqplib.connect(this.rabbitmq_url).then(function (conn) {
       var ok = conn.createChannel();
       ok = ok.then(function (ch) {
+
+        if (self.metrics) console.log('sample#bus.put.conn.open=' + bench.elapsed());
+
         when.all([
             ch.assertExchange(options.exchange, 'topic'),
             ch.publish(options.exchange, options.routingKey, new Buffer(JSON.stringify(content)))
